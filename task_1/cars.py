@@ -14,9 +14,16 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import *
 from sklearn.preprocessing import MinMaxScaler
+from scipy import stats
+from scipy.stats import norm, skew,kurtosis
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVR
 
 cars=pd.read_csv('cars_price.csv')
 
+
+#DATA CLEANING
 #dropping the 1st col as its redundant
 cars.drop('Unnamed: 0', axis=1, inplace=True)
 
@@ -33,10 +40,38 @@ cars.isnull().sum()
 
 head = cars.head(20)
 
+
+#EDA
+make_groupby=cars[['make', 'priceUSD']].groupby('make').max().sort_values(by='priceUSD', ascending=False)
+
+mileage_groupby=cars[['year', 'priceUSD', 'mileage(kilometers)']].groupby('year').mean()
+plt.plot(mileage_groupby) #blue line price
+
+segment_groupby=cars[['segment', 'priceUSD']].groupby('segment').median().sort_values(by='priceUSD')
+sns.displot(segment_groupby)
+
+segment_groupby2=cars[['segment', 'priceUSD']].groupby('segment').agg(['mean', 'count'])
+plt.plot(segment_groupby2) #orange line is count and vice versa
+
+make_groupby=cars[['make', 'model', 'priceUSD']].groupby(['make', 'model']).agg(['mean', 'count']).sort_values(by=('priceUSD', 'mean'))
+
+fuel_type_groupby=cars[['fuel_type', 'make', 'priceUSD']].groupby(['fuel_type', 'make']).max().sort_values(by='priceUSD', ascending=False)
+
+fuel_type_groupby2=cars[['fuel_type', 'priceUSD']].groupby(['fuel_type']).count().sort_values(by='priceUSD')
+plt.plot(fuel_type_groupby2)
+
+fuel_type_groupby3=cars[['fuel_type', 'priceUSD']].groupby(['fuel_type']).median().sort_values(by='priceUSD')
+plt.plot(fuel_type_groupby3)
+
+transmission_type_groupby=cars[['transmission', 'drive_unit', 'priceUSD']].groupby(['transmission', 'drive_unit']).mean().sort_values(by='priceUSD')
+
+color_groupby=cars[['color', 'segment', 'priceUSD']].groupby(['segment', 'color']).median().sort_values(by=['segment', 'priceUSD'], ascending=False)
+color_groupby2=cars[['color', 'model', 'priceUSD']].groupby(['color', 'model']).median().sort_values(by=['priceUSD'], ascending=False)
+
 #Visualizations
 sns.boxplot(cars['priceUSD'])
 
-#categorical
+#categorical visualization function
 def cat_visualization(dataframe, col):
     sns.countplot(dataframe[col])
     return
@@ -47,9 +82,11 @@ cat_visualization(cars, 'fuel_type')
 
 cat_visualization(cars, 'transmission')
 
+cat_visualization(cars, 'color')
+
 cat_visualization(cars, 'condition')
 
-cat_visualization(cars, 'drive_unit')
+sns.countplot(y='drive_unit', data=cars)
 
 #scatterplots
 sns.scatterplot(x=cars['year'], y=cars['priceUSD'])
@@ -60,35 +97,60 @@ sns.scatterplot(x=cars['mileage(kilometers)'], y=cars['priceUSD'])
 sns.scatterplot(x=cars['priceUSD'], y=cars['mileage(kilometers)'])
 
 sns.scatterplot(x=cars['priceUSD'], y=cars['segment'])
-sns.scatterplot(x=cars['segment'], y=cars['priceUSD'])
 
-make_groupby=cars[['make', 'priceUSD']].groupby('make').count()
+"""
+From the EDA we can infer the following from the data:
+1. Segment D is the most popular segment followed by C
+   The costliest segment type is the S type
+2. Most popular fuel_type is petrol followed by diesel
+   Electrocars are much costlier as compared to petrol and diesel
+3. Mechanics is the preferred transmission type rather than auto
+ . Auto transmission type is costlier than mechanical transmission. The costliest
+   is auto with all wheel drive
+4. In case of drive unit front wheel drive is the most popular
+5. We can observe a trend of rise in prices every year
+6. Even though with every passing year the price increases the mileage of the cars is decreasing
+   The "Therma" by car maker Lancia is the cheapest in the dataset
+   The "Bentayga" by car maker Bentley is the costliest followed by "Mulsanne" by Bentley as well
+   The costlies car in the dataset is of purple color followed by white and grey.
+    
+"""
 
-mileage_groupby=cars[['year', 'priceUSD', 'mileage(kilometers)']].groupby('year').count()
+#Statistical analysis
+#checking distribution of target variable
+def data_transform(data,input):
+    f,(ax1,ax2,ax3)=plt.subplots(1,3,figsize=(8,8))
+    sns.boxplot(x=input, data = data, ax=ax1, orient='v')
+    sns.distplot(cars[input], ax=ax2, color='blue', hist=False)
+    res = stats.probplot(data[input], plot=ax3)
+    f.subplots_adjust(wspace=0.22,right= 2)
+    sns.despine()
+    plt.show()
 
-segment_groupby=cars[['segment', 'priceUSD']].groupby('segment').count()
-sns.displot(segment_groupby)
+data_transform(cars, 'priceUSD')
 
-segment_groupby=cars[['segment', 'priceUSD']].groupby('segment').agg(['mean', 'count'])
-plt.plot(segment_groupby)
+#Our data is highly skewed to the left therfore taking the log of the data to normalize
+cars['priceUSD'] = np.log1p(cars['priceUSD'])
 
-segment_groupby=cars[['segment', 'priceUSD']].groupby('segment').agg(['mean', 'count'])
-plt.plot(segment_groupby) #orange line is count and vice versa
+data_transform(cars, 'priceUSD')
 
-make_groupby=cars[['make', 'model', 'priceUSD']].groupby(['make', 'model']).agg(['mean', 'count']).sort_values(by='model')
+sns.heatmap(cars.corr(), annot=True, robust=True)
 
-fuel_type_groupby=cars[['fuel_type', 'make', 'priceUSD']].groupby(['fuel_type', 'make']).max().sort_values(by='priceUSD', ascending=False)
+#ho mileage and price are independent 
+#h1 mileage and price are not independent
+#significance level 0.05
 
-fuel_type_groupby2=cars[['fuel_type', 'priceUSD']].groupby(['fuel_type']).count()
-plt.plot(fuel_type_groupby2)
+a=cars['mileage(kilometers)']
+b=cars['priceUSD']
+print(stats.pearsonr(a, b))
 
-fuel_type_groupby2=cars[['fuel_type', 'priceUSD']].groupby(['fuel_type']).median()
-plt.plot(fuel_type_groupby2)
+#t test
+stats.ttest_ind(a, b)
 
-fuel_type_groupby3=cars[['fuel_type', 'transmission', 'drive_unit', 'priceUSD']].groupby(['fuel_type', 'transmission', 'drive_unit']).mean().sort_values(by='priceUSD')
+#since the p value is less than the significance level we reject the null hypothesis
+#thus they are related
 
-color_groupby=cars[['color','segment', 'priceUSD']].groupby(['segment', 'color']).median().sort_values(by=['segment', 'priceUSD'], ascending=False)
-
+#encoding categorical variables
 one_hot_list=['condition', 'fuel_type', 'transmission', 'drive_unit', 'segment', 'color']
 
 cars2=cars.copy()
@@ -104,22 +166,40 @@ correlation=cars2.corr()
 y=cars2['priceUSD']
 X=cars2.drop('priceUSD', axis=1)
 
+#splitting into train and test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+#scaling the data
 scaler=MinMaxScaler()
 X_train=scaler.fit_transform(X_train)
 X_test=scaler.transform(X_test)
 
-regressor=LinearRegression()
-regressor.fit(X_train, y_train)
+"""
+from sklearn.preprocessing import StandardScaler  
+sc_X = StandardScaler()   
+sc_y = StandardScaler()
+X = sc_X.fit_transform(X)
+y = sc_y.fit_transform(y)"""
 
-y_pred=regressor.predict(X_test)
+#applying regression models
+r2_list=[]
+rmse_list=[]
+def reg_model(model):
+    regressor=model
+    regressor.fit(X_train, y_train)
+    y_pred=regressor.predict(X_test)
+    r2_s=r2_score(y_test, y_pred)
+    mse=mean_squared_error(y_test, y_pred)
+    rmse=np.sqrt(mse)
+    print(model)
+    print("r2 score:", r2_s)
+    print("rmse score:", rmse)
+    return
 
-mse=mean_squared_error(y_test, y_pred)
-print(mse)
-rmse=np.sqrt(mse)
-print(rmse)
-mean_absolute_error(y_test, y_pred)
-r2_score(y_test, y_pred)
+reg_model(LinearRegression())
+reg_model(DecisionTreeRegressor())
+reg_model(SVR(kernel = 'rbf')) 
+reg_model(RandomForestRegressor(n_estimators=100, random_state=42)) 
 
-
+# Random Forest gives the best R2 score and lowset RMSE followed by SVR
+    
