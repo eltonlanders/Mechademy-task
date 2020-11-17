@@ -19,6 +19,7 @@ from scipy.stats import norm, skew,kurtosis
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
+from sklearn.preprocessing import StandardScaler  
 
 cars=pd.read_csv('cars_price.csv')
 
@@ -117,22 +118,6 @@ From the EDA we can infer the following from the data:
 """
 
 #Statistical analysis
-#checking distribution of target variable
-def data_transform(data,input):
-    f,(ax1,ax2,ax3)=plt.subplots(1,3,figsize=(8,8))
-    sns.boxplot(x=input, data = data, ax=ax1, orient='v')
-    sns.distplot(cars[input], ax=ax2, color='blue', hist=False)
-    res = stats.probplot(data[input], plot=ax3)
-    f.subplots_adjust(wspace=0.22,right= 2)
-    sns.despine()
-    plt.show()
-
-data_transform(cars, 'priceUSD')
-
-#Our data is highly skewed to the left therfore taking the log of the data to normalize
-cars['priceUSD'] = np.log1p(cars['priceUSD'])
-
-data_transform(cars, 'priceUSD')
 
 sns.heatmap(cars.corr(), annot=True, robust=True)
 
@@ -169,21 +154,7 @@ X=cars2.drop('priceUSD', axis=1)
 #splitting into train and test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-#scaling the data
-scaler=MinMaxScaler()
-X_train=scaler.fit_transform(X_train)
-X_test=scaler.transform(X_test)
-
-"""
-from sklearn.preprocessing import StandardScaler  
-sc_X = StandardScaler()   
-sc_y = StandardScaler()
-X = sc_X.fit_transform(X)
-y = sc_y.fit_transform(y)"""
-
 #applying regression models
-r2_list=[]
-rmse_list=[]
 def reg_model(model):
     regressor=model
     regressor.fit(X_train, y_train)
@@ -196,10 +167,10 @@ def reg_model(model):
     print("rmse score:", rmse)
     return
 
-reg_model(LinearRegression())
 reg_model(DecisionTreeRegressor())
-reg_model(SVR(kernel = 'rbf')) 
 reg_model(RandomForestRegressor(n_estimators=100, random_state=42)) 
+reg_model(LinearRegression())
+reg_model(SVR(kernel = 'rbf')) 
 
-# Random Forest gives the best R2 score and lowset RMSE followed by SVR
+# Random Forest gives the best R2 score and lowset RMSE followed by DT
     
