@@ -8,7 +8,7 @@
 5. The app for __compressor decay state coef__ is in __flask_api.py__ and the app for __turbine decay state coef__ is in __flask_api2.py__.
 6. To run the apps: <br>
     - Navigate to the working directory in the cmd <br>
-    - Enter - __python flask_api.py__ or __python flask_api2.py__ .ex 
+    - Enter - __python flask_api.py__ or __python flask_api2.py__
     - Navigate to the ip address in the browser
     - After entering the ip address in the browser add __apidocs/__ after it. Example, __http://127.0.0.1:5000/apidocs/__
     - Get predictions.
