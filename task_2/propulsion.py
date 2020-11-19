@@ -77,10 +77,10 @@ sns.pairplot(data.iloc[:, [8, 9, 10, 15]], hue='gt_t_decay')
 sns.pairplot(data.iloc[:, [11, 12, 13, 14, 15]], hue='gt_t_decay')
 
 #splitting
-data2=data.values
-X = data2[:, 0:14]
-y= data2[:, 14] #GT Compressor decay state coefficient
-y2=data2[:, 15] #GT Turbine decay state coefficient
+data2=data
+X = data2.iloc[:, 0:14]
+y= data2.iloc[:, 14] #GT Compressor decay state coefficient
+y2=data2.iloc[:, 15] #GT Turbine decay state coefficient
 
 # feature selection for GT compressor decay state coefficient
 X_train, X_test, y_train1, y_test1 = train_test_split(X, y, test_size=0.20, random_state=0)
