@@ -1,2 +1,2 @@
 # Mechademy-task
-This is a repo for the tasks I have done Mechademy. 
+It consists of two tasks and both are regression problems
