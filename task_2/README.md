@@ -7,6 +7,7 @@
 ![post](https://user-images.githubusercontent.com/57378191/99688187-84c1ce00-2aab-11eb-95b5-ec760f44bf42.png)
 5. The app for __compressor decay state coef__ is in __flask_api.py__ and the app for __turbine decay state coef__ is in __flask_api2.py__.
 6. To run the apps: <br>
+    - Download both the flask files and move them to the working directory 
     - Navigate to the working directory in the cmd <br>
     - Enter - __python flask_api.py__ or __python flask_api2.py__
     - Navigate to the ip address in the browser
